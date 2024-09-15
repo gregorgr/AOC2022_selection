@@ -59,7 +59,6 @@
             HashSet<(int, int)> visited = new HashSet<(int, int)>();
             visited.Add(rope[ropeLength - 1]);
 
-            //  
 
             // Premikanje po vhodnih podatkih
             foreach (var move in moves)
@@ -69,7 +68,6 @@
 
                 // PrintGrid(90, 35,  rope);
                 // Console.WriteLine($"\n{move}");
-
                 for (int i = 0; i < steps; i++)
                 {
                     // Premik glave vrvi je podoben kot pri prvem delu
@@ -85,7 +83,6 @@
                     {
                         // pozicija predhodnega dela
                         int hx = rope[j - 1].Item1, hy = rope[j - 1].Item2;
-
 
                         // bool touching = Math.Abs(x1 - x2) <= 1 & Math.Abs(y1 - y2) <= 1;
                         if (!isTouching(hx, hy, rope[j].Item1, rope[j].Item2))
