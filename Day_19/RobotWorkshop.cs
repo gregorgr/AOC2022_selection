@@ -13,8 +13,11 @@ namespace Day_19
     {
         public string Name { get; set; }
         public string Product { get; set; }
-  
-        private int maxCount { get; set; }
+        
+
+        public int MaxCount { get; set; }
+
+        public int LastRobotCreationTime { get; set; }
 
         public bool DebugMe { get; set; }
 
@@ -32,7 +35,7 @@ namespace Day_19
             //Items = 0;
             DebugMe = false;
 
-            this.maxCount = name == "clay" ? 4 : 100;
+            this.MaxCount = name == "clay" ? 4 : 100;
        
         }
 
@@ -42,7 +45,7 @@ namespace Day_19
             Product = product;
            // Items = 0;
             DebugMe = false;
-            this.maxCount = maxCount;
+            this.MaxCount = maxCount;
  
             if (maxCount == 1)
             {
@@ -61,7 +64,7 @@ namespace Day_19
             Product = product;
             Robots = robots;
             // Items = items;
-            this.maxCount = maxCount;
+            this.MaxCount = maxCount;
             DebugMe = debugme;
             RobotPrice = robotPrice;
 
@@ -72,9 +75,25 @@ namespace Day_19
             RobotPrice.Add((name, cost));
         }
 
+        public int GetPriceFor(string name) {
+
+            foreach (var price in RobotPrice)
+            {
+                //string resourceToGet = price.Item1;
+                if (price.Item1 == name.ToLower()) {
+                    return price.Item2;
+                }
+               
+            }
+            return 0;
+        
+        }
 
 
-        public bool TryToCreateRobot(Dictionary<string, int> resources) {
+
+
+        // public bool TryToCreateRobot(Dictionary<string, int> resources) {
+        public bool TryToCreateRobot(int[] resources, int time) {
             
             int i = 0;
             foreach (var price in RobotPrice)
@@ -99,70 +118,74 @@ namespace Day_19
                 Console.Write($" to start building an {r.Name} robot.\n");
             }
             Robots.Add(r);
+            LastRobotCreationTime = time;
 
             return false;       
         }
-
-        private void UseResources(Dictionary<string, int> resources, string resourceName, int price) {
+        // private void UseResources(Dictionary<string, int> resources, string resourceName, int price) {
+        private void UseResources(int[] resources, string resourceName, int price) {
 
             //var existingResource = (resourceName, 0);
             bool resourceExists = false;
-
-            if (resources.ContainsKey(resourceName) && resources[resourceName] >= price)
-            {
-                resources[resourceName] = resources[resourceName]- price;
-            }
-            else {
-                Console.WriteLine($"ERROR: RobotWorkshop({Name})->[UseResources] Resource {resourceName} not found.");
-            }
-
-        }
-
-        public bool CanCreateRobot(Dictionary<string, int> resources) {
-            string currentRobot = Name;
-            bool canCreate =false; // for not able
-            if (Robots.Count < this.maxCount)
-            {
-                foreach (var price in RobotPrice)
+            if (Enum.TryParse(resourceName, true, out ResourceType res)){   
+               // Resource, resourceName, out Resource res) {
+                int resourceIndex = (int)res;
+                if (resources[resourceIndex] >= price)
                 {
-
-                    string resourceToGet = price.Item1;
-                    int robotPrice = price.Item2;
-
-                    int count = resources.ContainsKey(resourceToGet) ? resources[resourceToGet] : 0;
-       
-                    canCreate = count >= robotPrice;
-                    if (!canCreate) {
-                        break;
-                    }
-
+                    resources[resourceIndex] -=price;
+                }
+                else {
+                    Console.WriteLine($"ERROR not enough resources {resourceName}: have {resources[resourceIndex]}, need {price}");
                 }
             }
-            return canCreate;
+            else
+            {
+                Console.WriteLine($"Invalid resource name: {resourceName}.");
+            }
         }
-        public bool CheckResources(Dictionary<string, int> resources) {
+
+        public bool CanCreateRobot(int[] resources) {
+ 
+            return CheckResources(resources);
+        }
+        public bool CheckResources(int[] resources) {
             // this code is for linear programing but we dont need it
             string currentRobot = Name;
             bool canCreate = false; // for not able
 
-            if (Robots.Count < this.maxCount) {
 
-                foreach (var price in RobotPrice) {
 
+            if (Robots.Count < this.MaxCount || this.MaxCount==0) {
+
+                // check if we need this robot or we have allready enough resources
+                if (Enum.TryParse(Product, true, out ResourceType resource1)) {
+                    // we do not need resources
+                    if (resources[(int)resource1] > MaxCount * 1.2 && MaxCount != 0)
+                    {
+                        return false;
+                    }
+
+                }
+
+                foreach (var price in RobotPrice)
+                {
                     string resourceToGet = price.Item1;
                     int robotPrice = price.Item2;
 
-                    // int count = HasResource(resources, resourceToGet);
-                    int count = resources.ContainsKey(resourceToGet) ? resources[resourceToGet] : 0;
-                    if (count >= robotPrice)
-                    {
-                        canCreate = true;
-                        //Console.WriteLine($"a) Robot {Name}: {price.Item1}, Price: {price.Item2}");
+                    if (Enum.TryParse(resourceToGet, true, out ResourceType resource)) {
+
+                        int resourceIndex = (int)resource;
+                        // we do not need resources
+                        if (resources[(int)resource] > MaxCount * 1.2 && MaxCount != 0) {
+                            return false;
+                        }
+                        // we have enbough resources & resource is needed 
+                        canCreate = resources[(int)resource] >= robotPrice ;
+                        bool doWeNeedIt = true; // resources[(int)resource] < MaxCount * 1.2 || MaxCount==0;
+                        if (!canCreate) { 
+                            return false;         
+                        }
                     }
-                    else
-                    {
-                        return false;
-                    }        
                 }
             }
             return canCreate;
@@ -173,25 +196,6 @@ namespace Day_19
             return Robots.Count;
         }
         
-        /*
-        public int HasResource(Dictionary<string, int> resources, string resourceName)
-        {
-            
-
-            foreach (var resource in resources)
-            {
-                if (resource.Item1 == resourceName)
-                {
-                    return resource.Item2;
-                   // existingResource = resource;
-                   // resourceExists = true;
-                    break;
-                }
-            }
-            return 0;
-        }
-        
-        */
 
         public int Harvest() {
             int count = 0;
@@ -248,15 +252,30 @@ namespace Day_19
                 p.Add((price.Item1, price.Item2)); // Add a new resource
             }
 
-            return new RobotWorkshop(this.Name, this.Product, this.maxCount,  DebugMe, clonedRobots, p );
+            return new RobotWorkshop(this.Name, this.Product, this.MaxCount,  DebugMe, clonedRobots, p );
         }
         public void DebugPrint(string message = "")
         {
             if (DebugMe)
             {
+                string price = "";
+                foreach (var p in  RobotPrice)
+                {
+                    price += $"{p.Item1}: {p.Item2}; ";
 
-                Console.WriteLine($"Workshop: {Name}, Robots: {RobotCount()}: {message}");
+                }
+                if (price.Length > 0) {
+                    price = $"; Price: {price}";
+                }
+
+                Console.WriteLine($"Workshop: {Name}, Robots: {RobotCount()}: {message}{price}");
             }
         }
     }
 }
+public enum ResourceType {  
+    ore = 0, 
+    clay = 1, 
+    obsidian=2, 
+    geode=3 
+};

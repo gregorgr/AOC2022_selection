@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
     using System.Resources;
     using System.Runtime.CompilerServices;
     using System.Runtime.Versioning;
@@ -18,7 +19,7 @@
         private static  bool DebugMe = true;
 
         private static int maxTime = 0;
-        private static int currentMax = 0;
+        private static int currentGeodeMax = 0;
         private static int currentMaxTime = 0;
         private static int[] brakPointAt = { 10, 11,18 }; 
         
@@ -36,8 +37,9 @@
             string blueprint = "        Blueprint 1:\r\n        Each ore robot costs 4 ore.\r\n        Each clay robot costs 2 ore.\r\n        Each obsidian robot costs 3 ore and 14 clay.\r\n        Each geode robot costs 2 ore and 7 obsidian";
 
             string blueprintA = "blueprint19-demo.txt";
+            string blueprintB = "blueprint19.txt";
             maxTime = 24;
-            DebugMe = true;
+            DebugMe = false;
             int total = getTotalOfAllBluepints(blueprintA);
             Console.WriteLine($"Part one!\nDEMO Result: {total} (should be 33)");   //   22
 
@@ -49,7 +51,7 @@
             string[] blueprintLines = System.IO.File.ReadAllLines($"../../../{blueprintFile}");
             int total = 0;
             int i = 1;
-            
+            string result = "==============================\n";
             // Parsing example, adjust based on your AoC Day 19 task
             foreach (var line in blueprintLines)
             {
@@ -58,35 +60,91 @@
                 // get blueprint
                 List <RobotWorkshop> ws = ParseBlueprintLine(line);
 
+                // optimize maxcount
+
+                
+
                 //  int currentBlueprintNo,
 
-                Dictionary<string, int> res = new Dictionary<string, int>();
-                int maxCount = HarvestBlueprintMax(ws, res, 0);
+                //Dictionary<string, int> res = new Dictionary<string, int>();
+                //AddOrUpdateResource(res, "ore", 0);
+                //AddOrUpdateResource(res, "clay", 0);
+                //AddOrUpdateResource(res, "obsidian", 0);
+               // AddOrUpdateResource(res, "geode", 0);
+                int[] res = { 0, 0, 0, 0 };
+                GetOptimizedRobotMaxCount(ws);
 
-                Console.WriteLine($"\n*******************************\nBlueprint {i} has {maxCount} geodes and quality level of {maxCount * i}\n\n");
+                int maxCount = ProcessBlueprintLevel(ws, res, 0);
+                result += $"\n*******************************\nBlueprint {i} has {maxCount} geodes and quality level of {maxCount * i}\n";
+                Console.WriteLine($"\n*******************************\nBlueprint {i} can make {maxCount} geodes and quality level of {maxCount * i}\n\n");
                 total += maxCount * i;
                 i++;
             }
+            Console.WriteLine(result); 
 
             return total;
            
         }
 
 
+        public static void GetOptimizedRobotMaxCount(List<RobotWorkshop> rws)
+        {
 
-  
+            foreach (ResourceType resource in Enum.GetValues(typeof(ResourceType)))
+            {
+                // int count = resources[(int)resource];
+                //  {resources[(int)resource]},
+                // Console.Write($"{resource}: ");
+                int i = 0;
+                int indexOfResourceRobot = 0;
+                int price = 0;
+                foreach (RobotWorkshop rw in rws)
+                {
+                    if (rw.Product == resource.ToString())
+                    {
+                        indexOfResourceRobot = i;
+                    }
+                    price = Math.Max(price, rw.GetPriceFor(resource.ToString()));
+                    i++;
+                }
+                rws[indexOfResourceRobot].MaxCount = price;
+            }
+
+                /*
+                foreach (var x in r)
+                {
+                    int price = 0;
+                    string name = x.Key.ToString();
+                    int i = 0;
+                    int index = 0;
+                    foreach (RobotWorkshop rw in rws)
+                    {
+                        if (rw.Product == name)
+                        {
+                            index = i;
+                        }
+                        price = Math.Max(price, rw.GetPriceFor(name));
+                        i++;
+                    }
+                    rws[index].MaxCount = price;
+                }
+                */
+            }
 
 
-       // static int StartMaxHarvesting(int currentBlueprintNo, List<RobotWorkshop> robotWorkshops, HashSet<(string, int)> resources, int time, int maxTime)
-  
-        static int HarvestBlueprintMax(List<RobotWorkshop> rwsl,
-            Dictionary<string, int> resources, int time)
+
+        // static int StartMaxHarvesting(int currentBlueprintNo, List<RobotWorkshop> robotWorkshops, HashSet<(string, int)> resources, int time, int maxTime)
+        // HarvestBlueprintMax
+
+        static int ProcessBlueprintLevel(List<RobotWorkshop> rwsl,
+            int[] resources, int time)
         {
 
             if (DebugMe)
             {
                 Console.Write($"\n== Minute {time + 1} ==\n");
             }
+
 
          
             int robotID = rwsl.Count - 1; // is a geode robotID
@@ -95,152 +153,142 @@
             {
                 DebugWorkshops(rwsl, resources, $"3 Resources before robot creation: Time:{(time+1)}:");
 
-                rwsl[robotID].TryToCreateRobot(resources);
+                rwsl[robotID].TryToCreateRobot(resources, time);
                 DebugWorkshops(rwsl, resources, $"3 Resources after robot creation Time:{(time+1)}:");
 
+                /*
                 if (brakPointAt.Contains(time + 1)) {
                     Console.Write($"\n...Break minute {time + 1} ==\n");
-                }
-                
+                }  */
             }
 
-            int currentMax = ProcessBluepreintLeaf(robotID-1, rwsl,  resources, time);
+            int currentMax = ProcessBlueprintLeaf( rwsl,  resources, time);
 
             return currentMax;
         }
 
-  
 
-        static int ProcessBluepreintLeaf(int robotID, List<RobotWorkshop> rwsl,
-            Dictionary<string, int> resources, int time)
+        static int ProcesBlueprinetLeafOption(int createRobotID,
+            List<RobotWorkshop> rwsl, int[] resources, int time)
         {
+            // have to clone all data in this option
+            List<RobotWorkshop> cloneRwsl = CloneRobotWorkshopsList(rwsl);
+            int[] cloneRes = CloneResources(resources);
+
+            DebugWorkshops(cloneRwsl, cloneRes, $"RobotWorkshop before creating  {rwsl[createRobotID].Name} time: {(time + 1)}");
+            cloneRwsl[createRobotID].TryToCreateRobot(cloneRes, time );
+            DebugWorkshops(cloneRwsl, cloneRes, $"RobotWorkshop after creating  {rwsl[createRobotID].Name} time: {(time + 1)}\"");
+
+            return HarvestLeaf(cloneRwsl, cloneRes,time);
+        }
+        static int ProcessBlueprintLeaf( 
+            List<RobotWorkshop> rwsl,
+            int[] resources, int time)
+        {
+            int Max = 0;
+
+
+            // ReasonableChoices
+            int robotID = rwsl.Count-2;
             int currentMax = 0;
+            // if (robotID >= 0 && time > 1 && (time + 2) < maxTime)
 
-            
-
-            if (robotID > 0 && time >1 && (time+1)<maxTime)
-            {
-
-                bool canCreate = rwsl[robotID].CheckResources(resources);
-
-                if (canCreate)
+            // Option 1: Create a bot
+            // are we in time to make another bot?
+            if (time > 1 && (time + 2) < maxTime) {
+                // can we create a bot
+                while (robotID >= 0)
                 {
                     
-                    int notCreateMax = 0;
+                    string product = rwsl[robotID].Product;
 
-                    // Option 1: Don't create robot
-                    if ( rwsl[robotID].RobotCount()>1) {
-                        if (DebugMe && brakPointAt.Contains(time + 1))
-                        {
-                            Console.Write($"\n   ==>> create clone at {time + 1} skiping creating {rwsl[robotID].Name} robot have {rwsl[robotID].RobotCount().ToString()}==\n");
-                        }
-                        DebugWorkshops(rwsl, resources, $"\nRobotWorkshop before cloning  {rwsl[robotID].Name} Time:{(time+1)}:");
-                       // DebugResources(resources, "Resources before cloning");
-                        
-                        List<RobotWorkshop> cloneRwsl = CloneRobotWorkshopsList(rwsl);
-                        Dictionary<string, int> cloneRes = CloneResources(resources);
-                        DebugWorkshops(cloneRwsl,cloneRes, $"RobotWorkshop after cloning  {rwsl[robotID].Name} time:{(time + 1)}:");
-     
-                        Console.Write("-------------------\n");
-                        notCreateMax = ProcessBluepreintLeaf(robotID - 1, cloneRwsl, cloneRes, time);
-
-                        if (brakPointAt.Contains(time + 1))
-                        {
-                            //Console.Write($"\n== Back from not create {rwsl[robotID].Name} at minute {time + 1} ==\n");
-                            DebugWorkshops(cloneRwsl, cloneRes, $"After leaf  {rwsl[robotID].Name} cloning Time:{(time + 1)}:");
-                        }
-                    }
-
-                    if (DebugMe)
+                    bool canCreateBot = rwsl[robotID].CheckResources(resources);
+                    if (canCreateBot)
                     {
-                        Console.Write($"__ minute {time+1} Option 2: Create robot {rwsl[robotID].Name}==\n");
+                        int currentOptionMax = ProcesBlueprinetLeafOption(robotID, rwsl, resources, time);
+                        currentMax = Math.Max(currentMax, currentOptionMax);
                     }
-
-                    // Option 2: Create robot
-                    DebugWorkshops(rwsl, resources, $"RobotWorkshop before creating  {rwsl[robotID].Name} time: {(time+1)}");
-                    rwsl[robotID].TryToCreateRobot(resources);
-                    DebugWorkshops(rwsl, resources, $"RobotWorkshop after creating  {rwsl[robotID].Name} time: {(time+1)}\"");
-
-                    currentMax = ProcessBluepreintLeaf(robotID-1, rwsl, resources, time);
-
-
-                    // compare results
-                    // Return the best outcome between both options
-                    return currentMax > notCreateMax ? currentMax : notCreateMax;
-                    return Math.Max(currentMax, notCreateMax);
-
+                    robotID--;
                 }
-                else {
-                    // Proceed to next robot if creation not possible
-                    currentMax = ProcessBluepreintLeaf(robotID - 1, rwsl, resources, time);
-                }
-                return currentMax;
             }
 
-            if (DebugMe)
-            {
-                string s = "";
-                DebugWorkshops(rwsl, resources, $"RobotWorkshop before harvest at {time + 1}");
-            //    foreach (RobotWorkshop wsl in rwsl) {
-            //        s += $"{wsl.Name} -  Robots: {wsl.RobotCount().ToString()}; \n";
-            //    }
-             //   Console.Write($"... minute {time + 1} {s} Harvest at {time+1} ==\n");
-            }
+            // Option 2: Don't create a bot
+            int dontCreateMax = HarvestLeaf(rwsl, resources, time);
+
+            return Math.Max(dontCreateMax, currentMax);
+       
+            // return currentMax;
+        }
+
+        static int HarvestLeaf(List<RobotWorkshop> rwsl,
+                                int[] resources, int time)
+        {
             // harvest
             HarvestProducts(rwsl, resources);
             /// stat harvesting with new robots
             CheckRobotStatuses(rwsl);
 
-            // CheckRobotStatuses(currentBlueprintNo, robotWorkshops, resources);
             if (DebugMe)
             {
-                string s = "";
-                DebugWorkshops(rwsl, $"RobotWorkshop AFTER harvest at {time + 1}");
-                //    foreach (RobotWorkshop wsl in rwsl) {
-                //        s += $"{wsl.Name} -  Robots: {wsl.RobotCount().ToString()}; \n";
-                //    }
-                //   Console.Write($"... minute {time + 1} {s} Harvest at {time+1} ==\n");
+                // DebugWorkshops(rwsl, resources, $"RobotWorkshop before harvest at {time + 1}");
+                DebugWorkshops(rwsl, resources, $"RobotWorkshop AFTER harvest at {time + 1}");
             }
+
+
+            
 
             time++;
             if (time < maxTime)
             {
-                // we still have time to process
-                currentMax = HarvestBlueprintMax(rwsl, resources, time);
-            }
-            else {
-                // the end of the time
-                // we count
-                 int newCurrentMax = GetResourceCount(resources, "geode");
-                Console.Write("NEW MAX:\n");
-                DebugWorkshops(rwsl, "RobotWorkshop:");
-                DebugResources(resources, "Resources:");
-                Console.Write("====================================================================\n");
-                return newCurrentMax;
-               // currentMax = newCurrentMax>currentMax ? newCurrentMax : currentMax;
+
+                //TODO: some optimisation if leaf has bad perspective
+                // branch has pottential
+                if (rwsl[rwsl.Count - 1].RobotCount() >= 1) {
+
+                    int currentPotetnial = rwsl[rwsl.Count - 1].RobotCount() * (maxTime - time);
+                }
+                    
+
+
+                return ProcessBlueprintLevel(rwsl, resources, time);
 
             }
- 
-            return currentMax;
+
+            int newCurrentMax = resources[3];
+            if (newCurrentMax > 0) {
+                if (newCurrentMax >= currentGeodeMax)
+                {
+
+                    currentGeodeMax = newCurrentMax;
+                    bool tempdebug = DebugMe;
+                    DebugMe = true;
+                    Console.Write($"NEW MAX: {newCurrentMax}\n");
+                    DebugWorkshops(rwsl, resources, "RobotWorkshop:");
+                    // DebugResources(, "Resources:");
+                    DebugMe = tempdebug;
+
+                }
+                else if (newCurrentMax == 0) {
+                    bool tempdebug = DebugMe;
+
+                }
+
+            }
+
+            return newCurrentMax;
         }
 
-        static Dictionary<string, int> CloneResources(Dictionary<string, int> resources)
+
+        public static int[] CloneResources(int[] resources)
+        {
+            return (int[])resources.Clone();
+        }
+        static Dictionary<string, int> CloneResources1(Dictionary<string, int> resources)
         {
             return new Dictionary<string, int>(resources);
         }
-        /*
-        static HashSet<(string, int)> CloneResources(HashSet<(string, int)> resources) {
-            // Clone the HashSet (shallow clone, which is fine for value types like tuples)
-            HashSet<(string, int)> c = new HashSet<(string, int)>(resources);
-            foreach (var resource in resources)
-            {
-                c.Add((resource.Item1, resource.Item2)); // Add a new resource
-            }
-
-            return c;
-        }*/
-
-        static List<RobotWorkshop> CloneRobotWorkshopsList(List<RobotWorkshop> originalList)
+ 
+        public static List<RobotWorkshop> CloneRobotWorkshopsList(List<RobotWorkshop> originalList)
         {
 
             // Deep clone the list of RobotWorkshop
@@ -252,37 +300,66 @@
             return deepClonedList;
         }
 
-        static void DebugWorkshops(List<RobotWorkshop> workshop, Dictionary<string, int> resources, string message)
+        static void DebugWorkshops(List<RobotWorkshop> workshop, int[] resources, string message)
         {
-            Console.WriteLine(message);
-            foreach (RobotWorkshop w in workshop)
-            {
-                string s = resources.ContainsKey(w.Product) ? $" {w.Product}: {resources[w.Product]}" : ""; 
-                w.DebugPrint(s);
-            }
+            
+            if (DebugMe) {
+                
+                Console.WriteLine(message);
+                foreach (RobotWorkshop w in workshop)
+                {
+                    bool tempDebug = w.DebugMe;
+                    w.DebugMe = DebugMe;
+                   // string s = resources.ContainsKey(w.Product) ? $" {w.Product}: {resources[w.Product]}" : "";
+                    w.DebugPrint(".");
+                    w.DebugMe = tempDebug;
+                }
+                int index = 0;
+                string str = "";
+                foreach (ResourceType resource in Enum.GetValues(typeof(ResourceType)))
+                {
+                    // int count = resources[(int)resource];
+                    if (str.Length > 0)
+                    {
+                        str += ", ";
+                    }
+                    str += $" {resource}: {resources[(int)resource]} ";
+                    index++;
+                }
+                Console.WriteLine($"Resources: [{str}]");
+             }
         }
 
-        static void DebugResources(Dictionary<string, int> resources, string message)
+        static void DebugResources(int[] resources, string message)
         {
-            Console.WriteLine(message);
-            foreach (var resource in resources)
+            if (DebugMe)
             {
-                Console.WriteLine($"{resource.Key}: {resource.Value}");
+                Console.Write($"Resources: {message}: ");
+                foreach (ResourceType resource in Enum.GetValues(typeof(ResourceType)))
+                 {
+                    int count = resources[(int)resource];
+                    Console.Write($"{resource}: {resources[(int)resource]}, ");
+                }
+                Console.WriteLine();
             }
-            Console.WriteLine();
         }
 
         static void DebugWorkshops (List<RobotWorkshop> workshop, string message)
         {
-            Console.WriteLine(message);
-            foreach (RobotWorkshop w in workshop)
+            if (DebugMe)
             {
-                w.DebugPrint();
+                Console.WriteLine(message);
+                foreach (RobotWorkshop w in workshop)
+                {
+                    w.DebugPrint();
+                }
+
             }
+   
         }
 
    
-        static void CreateRobots(int currentBlueprintNo, List<RobotWorkshop> robotWorkshops, Dictionary<string, int> resources)
+        static void CreateRobots(int currentBlueprintNo, List<RobotWorkshop> robotWorkshops, int[] resources, int time)
         {
             string nextRobot = "";
             for (int k = robotWorkshops.Count - 1; k >= 0; k--)
@@ -295,7 +372,7 @@
 
                 }
                 else {
-                    robotWorkshops[k].TryToCreateRobot(resources);
+                    robotWorkshops[k].TryToCreateRobot(resources, time);
                 }
             }
            // return nextRobot;
@@ -326,45 +403,37 @@
             return index;
         }
 
-        static void HarvestProducts(List<RobotWorkshop> robotWorkshops, Dictionary<string, int> resources ) {
+        static void HarvestProducts(List<RobotWorkshop> robotWorkshops, 
+            int[] resources ) {
 
                  
 
                 for (int k = 0; k < robotWorkshops.Count ; k++)
                 {
-
-                    string name = robotWorkshops[k].Name;
                     string product = robotWorkshops[k].Product;
-                    // create
+                    if (robotWorkshops[k].RobotCount() > 0) {
 
-                    int newItems = robotWorkshops[k].Harvest();
+                        string name = robotWorkshops[k].Name;
+                        
+                        // create
 
-                    AddOrUpdateResource(resources, product, newItems);
+                        int newItems = robotWorkshops[k].Harvest();
 
-                   
-
-                    if (DebugMe)
-                    {
-                        int total = GetResourceCount(resources, product);
-                        if (total > 0)
+                        if (newItems > 0)
                         {
-                            Console.Write($" you now have {total} {product}.\n");
-                        }
-                    }
-                // work
-
-                    /*
-                int canCreate = robotWorkshops[k].CheckResources(resources);
-                if (canCreate == 0)
-                {
-                    // can not ccreate jet! sop skip checking next robot
-                    break;
-
+                            AddOrUpdateResource(resources, product, newItems);
+                        }     
                 }
-*/
 
-
-            }
+                if (DebugMe)
+                {
+                    int total = GetResourceCount(resources, product);
+                    if (total > 0)
+                    {
+                        Console.Write($" you now have {total} {product}.\n");
+                    }
+                }
+           }
         }
 
         static void ProcessRobotCost(List<Resource> res, string costDescription)
@@ -397,61 +466,35 @@
         }
 
         // Method to get the count of a resource from the HashSet
-        static int GetResourceCount(Dictionary<string, int> resources, string resourceName)
+        static int GetResourceCount(int[] resources, string resourceName)
         {
-            return resources.ContainsKey(resourceName) ? resources[resourceName] : 0;
-            /*
-            foreach (var resource in resources)
-            {
-                if (resource.Item1 == resourceName)
-                {
-                    return resource.Item2; // Return the count (int) if the resource exists
-                }
-            }
-            return 0; // Return 0 if the resource is not found
-            */
+            int index = GetResourceIndex(resourceName);
+            return resources[index];
+            //return resources.ContainsKey(resourceName) ? resources[resourceName] : 0;
+       
         }
 
 
         // Method to add or update resource count in a HashSet
-        static void AddOrUpdateResource(Dictionary<string, int> resources, string resourceName, int count)
+        static void AddOrUpdateResource(int[] resources, string resourceName, int count)
         {
-            // Check if the resource exists in the HashSet
-            if (resources.ContainsKey(resourceName))
-            {
-                resources[resourceName] += count;
-            }
-            else
-            {
-                resources[resourceName] = count;
-            }
-            /*
-            var existingResource = (resourceName, 0);
-            bool resourceExists = false;
+            int index = GetResourceIndex(resourceName);
+            resources[index] += count;
 
-            foreach (var resource in resources)
-            {
-                if (resource.Item1 == resourceName)
-                {
-                    existingResource = resource;
-                    resourceExists = true;
-                    break;
-                }
-            }
-
-            // Remove the existing resource and re-add it with the updated count
-            if (resourceExists)
-            {
-                resources.Remove(existingResource); // Remove the old entry
-                resources.Add((resourceName, existingResource.Item2 + count)); // Add with updated count
-            }
-            else
-            {
-                resources.Add((resourceName, count)); // Add new resource
-            }
-            */
         }
 
+        // Method to get the resource index based on its name
+        static int GetResourceIndex(string resourceName)
+        {
+            switch (resourceName.ToLower())
+            {
+                case "ore": case "Ore": return 0;
+                case "clay": case "Clay": return 1;
+                case "obsidian": case "Obsidian": return 2;
+                case "geode": case "Geode": return 3;
+                default: throw new ArgumentException("Unknown resource name");
+            }
+        }
         private static List<RobotWorkshop> ParseBlueprintLine(string line)
         {
 
@@ -497,7 +540,9 @@
             // Example of further parsing, you can customize this based on how you want to handle resources
             if (costDescription.Contains("ore robot"))
             {
-                var oreCost = Regex.Match(costDescription, @"costs (\d+) ore").Groups[1].Value;
+                int oreCost = int.Parse(Regex.Match(costDescription, @"costs (\d+) ore").Groups[1].Value);
+                index = GetRobotOrCreateWorkshopIdByProduct(robotWorkshops, product);
+                robotWorkshops[index].AddPrice("ore", oreCost);
                 if (DebugMe)
                 {
                     Console.WriteLine($"Ore Robot costs {oreCost} ore.");
