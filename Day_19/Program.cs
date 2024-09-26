@@ -38,10 +38,12 @@
 
             string blueprintA = "blueprint19-demo.txt";
             string blueprintB = "blueprint19.txt";
+            string blueprintE = "blueprint19ERR.txt"; // only record wit a wrong result
             maxTime = 24;
             DebugMe = false;
-            int total = getTotalOfAllBluepints(blueprintA);
-            Console.WriteLine($"Part one!\nDEMO Result: {total} (should be 33)");   //   22
+            int total = getTotalOfAllBluepints(blueprintE);
+            Console.WriteLine($"Part one!\nResult: {total} (should be 33 or 87 or 1599)");   //   22
+            Console.WriteLine("");
 
         }
 
@@ -73,13 +75,14 @@
                // AddOrUpdateResource(res, "geode", 0);
                 int[] res = { 0, 0, 0, 0 };
                 GetOptimizedRobotMaxCount(ws);
-
+                currentGeodeMax = 0;
                 int maxCount = ProcessBlueprintLevel(ws, res, 0);
-                result += $"\n*******************************\nBlueprint {i} has {maxCount} geodes and quality level of {maxCount * i}\n";
+                result += $"Blueprint {i} has {maxCount} geodes and quality level of {maxCount * i}\n";
                 Console.WriteLine($"\n*******************************\nBlueprint {i} can make {maxCount} geodes and quality level of {maxCount * i}\n\n");
                 total += maxCount * i;
                 i++;
             }
+            result += $"--------------------------------------------\nTotal={total} should be 33 or 1599";
             Console.WriteLine(result); 
 
             return total;
@@ -107,29 +110,10 @@
                     price = Math.Max(price, rw.GetPriceFor(resource.ToString()));
                     i++;
                 }
+                price =(int)( 1.1 * price);
                 rws[indexOfResourceRobot].MaxCount = price;
             }
-
-                /*
-                foreach (var x in r)
-                {
-                    int price = 0;
-                    string name = x.Key.ToString();
-                    int i = 0;
-                    int index = 0;
-                    foreach (RobotWorkshop rw in rws)
-                    {
-                        if (rw.Product == name)
-                        {
-                            index = i;
-                        }
-                        price = Math.Max(price, rw.GetPriceFor(name));
-                        i++;
-                    }
-                    rws[index].MaxCount = price;
-                }
-                */
-            }
+        }
 
 
 
@@ -176,7 +160,7 @@
             int[] cloneRes = CloneResources(resources);
 
             DebugWorkshops(cloneRwsl, cloneRes, $"RobotWorkshop before creating  {rwsl[createRobotID].Name} time: {(time + 1)}");
-            cloneRwsl[createRobotID].TryToCreateRobot(cloneRes, time );
+            cloneRes = cloneRwsl[createRobotID].TryToCreateRobot(cloneRes, time );
             DebugWorkshops(cloneRwsl, cloneRes, $"RobotWorkshop after creating  {rwsl[createRobotID].Name} time: {(time + 1)}\"");
 
             return HarvestLeaf(cloneRwsl, cloneRes,time);

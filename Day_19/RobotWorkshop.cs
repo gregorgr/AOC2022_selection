@@ -93,7 +93,7 @@ namespace Day_19
 
 
         // public bool TryToCreateRobot(Dictionary<string, int> resources) {
-        public bool TryToCreateRobot(int[] resources, int time) {
+        public int[] TryToCreateRobot(int[] resources, int time) {
             
             int i = 0;
             foreach (var price in RobotPrice)
@@ -101,7 +101,7 @@ namespace Day_19
                 string resourceToGet = price.Item1;
                 int robotPrice = price.Item2;
 
-                UseResources(resources, resourceToGet, robotPrice);
+                resources= UseResources(resources, resourceToGet, robotPrice);
                 if (DebugMe)
                 {
                     string text = i==0 ? "Spend":" and";
@@ -120,10 +120,10 @@ namespace Day_19
             Robots.Add(r);
             LastRobotCreationTime = time;
 
-            return false;       
+            return resources;       
         }
         // private void UseResources(Dictionary<string, int> resources, string resourceName, int price) {
-        private void UseResources(int[] resources, string resourceName, int price) {
+        private int[] UseResources(int[] resources, string resourceName, int price) {
 
             //var existingResource = (resourceName, 0);
             bool resourceExists = false;
@@ -142,6 +142,7 @@ namespace Day_19
             {
                 Console.WriteLine($"Invalid resource name: {resourceName}.");
             }
+            return resources;
         }
 
         public bool CanCreateRobot(int[] resources) {
@@ -176,9 +177,9 @@ namespace Day_19
 
                         int resourceIndex = (int)resource;
                         // we do not need resources
-                        if (resources[(int)resource] > MaxCount * 1.2 && MaxCount != 0) {
-                            return false;
-                        }
+                     //   if (resources[(int)resource] > MaxCount * 1.2 && MaxCount != 0) {
+                     //       return false;
+                    //    }
                         // we have enbough resources & resource is needed 
                         canCreate = resources[(int)resource] >= robotPrice ;
                         bool doWeNeedIt = true; // resources[(int)resource] < MaxCount * 1.2 || MaxCount==0;
