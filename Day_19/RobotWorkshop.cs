@@ -93,7 +93,7 @@ namespace Day_19
 
 
         // public bool TryToCreateRobot(Dictionary<string, int> resources) {
-        public int[] TryToCreateRobot(int[] resources, int time) {
+        public uint[] TryToCreateRobot(uint[] resources, int time) {
             
             int i = 0;
             foreach (var price in RobotPrice)
@@ -123,33 +123,44 @@ namespace Day_19
             return resources;       
         }
         // private void UseResources(Dictionary<string, int> resources, string resourceName, int price) {
-        private int[] UseResources(int[] resources, string resourceName, int price) {
-
-            //var existingResource = (resourceName, 0);
-            bool resourceExists = false;
-            if (Enum.TryParse(resourceName, true, out ResourceType res)){   
-               // Resource, resourceName, out Resource res) {
-                int resourceIndex = (int)res;
-                if (resources[resourceIndex] >= price)
+        private uint[] UseResources(uint[] resources, string resourceName, int price) {
+            try {
+                //var existingResource = (resourceName, 0);
+                bool resourceExists = false;
+                if (Enum.TryParse(resourceName, true, out ResourceType res))
                 {
-                    resources[resourceIndex] -=price;
+                    // Resource, resourceName, out Resource res) {
+                    uint resourceIndex = (uint)res;
+                    if (resources[resourceIndex] >= price)
+                    {
+                        uint newres = resources[resourceIndex] - (uint)price;
+                        resources[resourceIndex] = newres;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"ERROR not enough resources {resourceName}: have {resources[resourceIndex]}, need {price}");
+                        throw new Exception($"ERROR not enough resources {resourceName}: have {resources[resourceIndex]}, need {price}");
+                    }
                 }
-                else {
-                    Console.WriteLine($"ERROR not enough resources {resourceName}: have {resources[resourceIndex]}, need {price}");
+                else
+                {
+                    Console.WriteLine($"Invalid resource name: {resourceName}.");
+                    throw new Exception($"Invalid resource name: {resourceName}.");
                 }
+                return resources;
             }
-            else
+            catch(Exception e)
             {
-                Console.WriteLine($"Invalid resource name: {resourceName}.");
+                throw new Exception(e.ToString());
             }
-            return resources;
+
         }
 
-        public bool CanCreateRobot(int[] resources) {
+        public bool CanCreateRobot(uint[] resources) {
  
             return CheckResources(resources);
         }
-        public bool CheckResources(int[] resources) {
+        public bool CheckResources(uint[] resources) {
             // this code is for linear programing but we dont need it
             string currentRobot = Name;
             bool canCreate = false; // for not able
@@ -198,8 +209,8 @@ namespace Day_19
         }
         
 
-        public int Harvest() {
-            int count = 0;
+        public uint Harvest() {
+            uint count = 0;
 
             int items = 0;
             foreach (Robot robot in Robots)
