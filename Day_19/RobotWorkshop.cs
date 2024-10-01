@@ -41,10 +41,10 @@ namespace Day_19
 
         public RobotWorkshop(string name, string product, int maxCount)
         {
-            Name = name == "geode" ? name + "-cracking" : name + "-collecting";
-            Product = product;
-           // Items = 0;
-            DebugMe = false;
+            this.Name = name == "geode" ? name + "-cracking" : name + "-collecting";
+            this.Product = product;
+            // Items = 0;
+            this.DebugMe = false;
             this.MaxCount = maxCount;
  
             if (maxCount == 1)
@@ -60,13 +60,13 @@ namespace Day_19
         //new RobotWorkshop(this.Name, this.Product, this.Items, this.maxCount, DebugMe, clonedRobots );
         public RobotWorkshop(string name, string product, int maxCount,   bool debugme, List<Robot> robots, HashSet<(string, int)> robotPrice)
         {
-            Name = name;
-            Product = product;
-            Robots = robots;
-            // Items = items;
+            this.Name = name;
+            this.Product = product;
+            this.Robots = robots;
+
             this.MaxCount = maxCount;
-            DebugMe = debugme;
-            RobotPrice = robotPrice;
+            this.DebugMe = debugme;
+            this.RobotPrice = robotPrice;
 
         }
 
@@ -117,11 +117,12 @@ namespace Day_19
             {
                 Console.Write($" to start building an {r.Name} robot.\n");
             }
-            Robots.Add(r);
+            this.Robots.Add(r);
             LastRobotCreationTime = time;
 
             return resources;       
         }
+
         // private void UseResources(Dictionary<string, int> resources, string resourceName, int price) {
         private uint[] UseResources(uint[] resources, string resourceName, int price) {
             try {
@@ -172,7 +173,7 @@ namespace Day_19
                 // check if we need this robot or we have allready enough resources
                 if (Enum.TryParse(Product, true, out ResourceType resource1)) {
                     // we do not need resources
-                    if (resources[(int)resource1] > MaxCount * 1.2 && MaxCount != 0)
+                    if (resources[(int)resource1] >= MaxCount * 4 && this.MaxCount != 0)
                     {
                         return false;
                     }
@@ -187,10 +188,7 @@ namespace Day_19
                     if (Enum.TryParse(resourceToGet, true, out ResourceType resource)) {
 
                         int resourceIndex = (int)resource;
-                        // we do not need resources
-                     //   if (resources[(int)resource] > MaxCount * 1.2 && MaxCount != 0) {
-                     //       return false;
-                    //    }
+
                         // we have enbough resources & resource is needed 
                         canCreate = resources[(int)resource] >= robotPrice ;
                         bool doWeNeedIt = true; // resources[(int)resource] < MaxCount * 1.2 || MaxCount==0;
@@ -264,8 +262,9 @@ namespace Day_19
                 p.Add((price.Item1, price.Item2)); // Add a new resource
             }
 
-            return new RobotWorkshop(this.Name, this.Product, this.MaxCount,  DebugMe, clonedRobots, p );
+            return new RobotWorkshop(this.Name, this.Product, this.MaxCount,  this.DebugMe, clonedRobots, p );
         }
+
         public void DebugPrint(string message = "")
         {
             if (DebugMe)

@@ -56,7 +56,7 @@ namespace Day_19
 
         public Robot Clone()
         {
-            return new Robot(this.Name, this.IsBuilding, DebugMe);
+            return new Robot(this.Name, this.IsBuilding, this.DebugMe);
         }
 
     }
