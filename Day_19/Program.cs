@@ -32,6 +32,7 @@
 
         // Initialize the cache dictionary
         private static Dictionary<(int, string, string), uint> cache;
+
         /*
         Blueprint 1:
         Each ore robot costs 4 ore.
@@ -39,6 +40,7 @@
         Each obsidian robot costs 3 ore and 14 clay.
         Each geode robot costs 2 ore and 7 obsidian
          * */
+
         static void Main(string[] args)
         {
             Console.WriteLine("This is not working as it should. Recursion works for first half of demo but constraints are not working for second blueprint.");
@@ -50,14 +52,33 @@
 
             maxTime = 24;
             DebugMe = false;
-            int total = getTotalOfAllBluepints(blueprintB);
-            
-            Console.WriteLine($"Part one!\nResult: {total} (should be 33 or 87 or 1599)");   //   22
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            int total =  getTotalOfAllBluepints(blueprintB, maxTime,2);
+            stopwatch.Stop();
+            TimeSpan elapsed = stopwatch.Elapsed;
+
+            Console.WriteLine($"\nPart one!\nResult: {total} (should be 33 or 1599) in {elapsed.Seconds} seconds and {elapsed.Milliseconds} milliseconds");   
             Console.WriteLine("");
+
+            maxTime = 32;
+            stopwatch.Restart();
+
+            // since code for day1 is not optimized enough and runns too slow
+            // total = getTotalOfAllBluepints(blueprintA, maxTime, 3);
+
+            // optimized solution is in object Day19p2
+            Day19p2 day19 = new Day19p2();
+            long total2 = day19.Run(blueprintB, maxTime, 3);
+            elapsed = stopwatch.Elapsed;
+            Console.WriteLine($"\nPart two!\nResult: {total2} (should be 14112 in {elapsed.Seconds} seconds and {elapsed.Milliseconds} milliseconds");   
+            // Console.WriteLine("");
 
         }
 
-        static int getTotalOfAllBluepints(string blueprintFile)
+
+        static int getTotalOfAllBluepints(string blueprintFile, int maxMinutes, int maxBlueprints=0,  bool multiply = false)
         {
 
             Stopwatch stopwatch = new Stopwatch();
@@ -66,7 +87,7 @@
             int total = 0;
             int i = 1;
             int bpnumber = 0;
-            string result = "==============================\n";
+            string result = "------------------------------------------------------\n";
             string pattern = @"Blueprint (\d+):";
             // Parsing example, adjust based on your AoC Day 19 task
             foreach (var line in blueprintLines)
@@ -83,21 +104,27 @@
                 currentGeodeMax = 0;
                 cache = new Dictionary<(int, string, string), uint>();
 
-                int maxCount = ProcessBlueprintLevel(ws, res, 0);
+                int maxCount = ProcessBlueprintLevel(ws, res, 0, maxMinutes);
                 Regex regex = new Regex(pattern);
                 Match match = regex.Match(line);
                 bpnumber = match.Success ? int.Parse(match.Groups[1].Value) : i;
-                total += maxCount * bpnumber;
-
-                Console.WriteLine($"\n----------------------------------*\nBlueprint {bpnumber} can make {maxCount} geodes and quality level of {maxCount * bpnumber}  q=  {total}\n\n");
+     
+                
+                if (multiply)
+                {
+                    total = total * bpnumber;
+                }
+                else {
+                    total += maxCount * bpnumber;
+                }
+                Console.WriteLine($"-----------------------------------------------------\nBlueprint {bpnumber} can make {maxCount} geodes and quality level of {maxCount * bpnumber}  quality level={total}\n\n");
                 result += $"Blueprint {bpnumber} has {maxCount} geodes and quality level of {maxCount * bpnumber}  q=  {total}\n";
 
                 i++;
+                if (i > maxBlueprints && maxBlueprints!=0) {
+                    break;
+                }
             }
-            stopwatch.Stop();
-            TimeSpan elapsed = stopwatch.Elapsed;
-            result += $"=====================================================\nTotal={total} should  1599 in {elapsed.Seconds} seconds and {elapsed.Milliseconds} milliseconds";
-            Console.WriteLine(result);
 
             return total;
 
@@ -135,7 +162,7 @@
         // HarvestBlueprintMax
 
         static int ProcessBlueprintLevel(List<RobotWorkshop> rwsl,
-            uint[] resources, int time)
+            uint[] resources, int time, int maxMinutes)
         {
 
             if (DebugMe)
@@ -154,12 +181,12 @@
             }
 
 
-            return  ProcessBlueprintLeaf(rwsl, resources, time);
+            return  ProcessBlueprintLeaf(rwsl, resources, time, maxMinutes);
         }
 
 
         static int ProcesBlueprinetLeafOption(int createRobotID,
-            List<RobotWorkshop> rwsl, uint[] resources, int time)
+            List<RobotWorkshop> rwsl, uint[] resources, int time, int maxMinutes)
         {
             // have to clone all data in this option
             List<RobotWorkshop> cloneRwsl = CloneRobotWorkshopsList(rwsl);
@@ -169,11 +196,11 @@
             cloneRes = cloneRwsl[createRobotID].TryToCreateRobot(cloneRes, time);
             DebugWorkshops(cloneRwsl, cloneRes, $"RobotWorkshop after creating  {rwsl[createRobotID].Name} time: {(time + 1)}\"");
 
-            return HarvestLeaf(cloneRwsl, cloneRes, time);
+            return HarvestLeaf(cloneRwsl, cloneRes, time, maxMinutes);
         }
         static int ProcessBlueprintLeaf(
             List<RobotWorkshop> rwsl,
-            uint[] resources, int time)
+            uint[] resources, int time, int maxMinutes)
         {
             int Max = 0;
 
@@ -185,10 +212,10 @@
             int robotID = rwsl.Count - 1;
             int currentMax = 0;
             // if (robotID >= 0 && time > 1 && (time + 2) < maxTime)
-
+            
             // Option 1: Create a bot
             // are we in time to make another bot?
-            if (time > 1 && (time + 1) < maxTime)
+            if (time > 1 && (time + 1) <maxMinutes) // maxTime)
             {
                 // can we create a bot
                 while (robotID >= 0)
@@ -199,7 +226,7 @@
                     bool canCreateBot = rwsl[robotID].CheckResources(resources);
                     if (canCreateBot)
                     {
-                        int currentOptionMax = ProcesBlueprinetLeafOption(robotID, rwsl, resources, time);
+                        int currentOptionMax = ProcesBlueprinetLeafOption(robotID, rwsl, resources, time, maxMinutes);
                         currentMax = Math.Max(currentMax, currentOptionMax);
                     }
                     robotID--;
@@ -207,7 +234,7 @@
             }
 
             // Option 2: Don't create a bot
-            int dontCreateMax = HarvestLeaf(rwsl, resources, time);
+            int dontCreateMax = HarvestLeaf(rwsl, resources, time, maxMinutes);
 
             currentMax = Math.Max(dontCreateMax, currentMax);
 
@@ -218,7 +245,7 @@
         }
 
         static int HarvestLeaf(List<RobotWorkshop> rwsl,
-                                uint[] resources, int time)
+                                uint[] resources, int time, int maxMinutes)
         {
             // harvest
             HarvestProducts(rwsl, resources);
@@ -244,7 +271,7 @@
 
 
 
-                return ProcessBlueprintLevel(rwsl, resources, time);
+                return ProcessBlueprintLevel(rwsl, resources, time, maxMinutes);
 
             }
 
