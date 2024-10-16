@@ -14,17 +14,17 @@ namespace Day_22
          * Simple
          * 
          * Part Two
-         * I decided on a git more universial solution.
+         * I decided on a bit more universial solution.
          * 1.   there are 11 ways to fold net of the cube and the solution should cover all possible scenarios:
          *      https://www.wolframcloud.com/objects/demonstrations/All11FoldingNetsOfTheCube-source.nb
          * 2. First we must indentify numbered Faces of the cube
          * 3. We must find edges all of the Faces (but exclude inner edges)
+         * 4. Find  Edges, that connect in corners
          * 
          * TODO:
-         * 4. Find  Edges, that connect 3 faces or 4 edges
-         * - exclude inner edges
+
          * 
-         * 5. now er search for neigbouring Faces
+         * 5. now start search for neigbouring Faces how cube map folds
          * - from each inner corner (from 4.) move out of the corrner on and the other dirrection and identify faces 
          * - direction from moving from start to end is a direction of a vector (start-end) 90° to face 
          *   is a direction that moving cursor over new face changes
