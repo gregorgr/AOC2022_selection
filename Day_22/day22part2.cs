@@ -85,14 +85,14 @@ namespace Day_22
         public (int Row, int Col) Start { get; set; }
         public (int Row, int Col) End { get; set; }
         public List<(int Row, int Col)> Coordinates { get; set; }
-        public int StartFaceId { get; set; }
+        public int FaceId { get; set; }
         public string EdgeType { get; set; }
 
         public bool IsVertical {  get; set; }
 
-        public Edge(int startFaceId, string edgeType, (int Row, int Col) start, (int Row, int Col) end)
+        public Edge(int faceId, string edgeType, (int Row, int Col) start, (int Row, int Col) end)
         {
-            StartFaceId = startFaceId;
+            FaceId = faceId;
             EdgeType = edgeType;
             Start = start;
             End = end;
@@ -104,7 +104,7 @@ namespace Day_22
         public bool IsAdjacentAndAligned(Edge other)
         {
             // Check for Different Faces
-            if (this.StartFaceId==other.StartFaceId) { 
+            if (this.FaceId==other.FaceId) { 
                 return false; 
             }
       
@@ -120,18 +120,73 @@ namespace Day_22
             return false;
         }
 
-        public void FlipPoints() {
+        public bool Equals(Edge other) {
+            // Check for null and reference equality
+            if (other == null) return false;
+
+            // edge is the same
+            if (this.FaceId == other.FaceId && this.IsVertical == other.IsVertical && this.EdgeType == other.EdgeType)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public void FlippPoints() {
             (int Row, int Col) oldStart = this.Start;
             this.Start = this.End;
             this.End = oldStart;
         }
+        public bool IsConnectedTo(Edge other) {
 
+            // edge is the same
+            if(this.Equals( other)) {
+                return false;
+            }
+            // edge is the same
+            if (this.FaceId == other.FaceId && this.IsVertical == other.IsVertical && this.EdgeType == other.EdgeType)
+            {
+                return true;
+            }
+            if ((this.End == other.Start))
+            {
+
+                return true;
+            }
+
+            if ((this.End == other.End))
+            {
+                other.FlippPoints();
+                return true;
+            }
+            if ((this.End.Row + 1 == other.Start.Row && this.End.Col == other.Start.Col) || (this.End.Row == other.Start.Row && this.End.Col+1 == other.Start.Col))
+            {
+                return true;
+            }
+            if ((this.End.Row + 1 == other.End.Row && this.End.Col == other.End.Col) || (this.End.Row  == other.End.Row && this.End.Col+1 == other.End.Col))
+            {
+                other.FlippPoints();
+                return true;
+            }
+            if ((this.End.Row-1 == other.End.Row && this.End.Col == other.End.Col))
+            {
+                other.FlippPoints();
+                return true;
+            }
+            if ((this.End.Row  == other.End.Row-1 && this.End.Col == other.End.Col))
+            {
+                other.FlippPoints();
+                return true;
+            }
+
+            return false;
+        }
         public bool IsValidCorner(Edge other)
         {
             // Check for Different Faces
-            string s1 = this.EdgeType;
-            string s2 = other.EdgeType;
-            if (this.StartFaceId == other.StartFaceId || this.IsVertical == other.IsVertical)
+            // string s1 = this.EdgeType;
+            // string s2 = other.EdgeType;
+            if (this.FaceId == other.FaceId || this.IsVertical == other.IsVertical)
             {
                 return false;
             }
@@ -156,21 +211,21 @@ namespace Day_22
                     }else if (this.End.Col - 1 == other.Start.Col && this.End.Row + 1 == other.Start.Row) {
 
                         // flip start of this
-                        this.FlipPoints();
+                        this.FlippPoints();
                         return true;
                     }
                     else if (this.Start.Col - 1 == other.End.Col && this.Start.Row + 1 == other.End.Row) {
 
                         // flip start of other
-                        other.FlipPoints();
+                        other.FlippPoints();
                         return true;
                     }
                     else if (this.End.Col - 1 == other.End.Col && this.End.Row + 1 == other.End.Row)
                     {
                         // flip start of this
-                        this.FlipPoints();
+                        this.FlippPoints();
                         // flip start of other
-                        other.FlipPoints();
+                        other.FlippPoints();
                         return true;
                     }
 
@@ -189,27 +244,24 @@ namespace Day_22
                     {
 
                         // flip start of this
-                        this.FlipPoints();
+                        this.FlippPoints();
                         return true;
                     }
                     else if (this.Start.Col - 1 == other.End.Col && this.Start.Row + 1 == other.End.Row)
                     {
 
                         // flip start of other
-                        other.FlipPoints();
+                        other.FlippPoints();
                         return true;
                     }
                     else if (this.End.Col - 1 == other.End.Col && this.End.Row + 1 == other.End.Row)
                     {
                         // flip start of this
-                        this.FlipPoints();
+                        this.FlippPoints();
                         // flip start of other
-                        other.FlipPoints();
+                        other.FlippPoints();
                         return true;
                     }
-
-
-
                 }
                 else
                 {
@@ -225,22 +277,22 @@ namespace Day_22
                     {
 
                         // flip start of this
-                        this.FlipPoints();
+                        this.FlippPoints();
                         return true;
                     }
                     else if (this.Start.Col - 1 == other.End.Col && this.Start.Row + 1 == other.End.Row)
                     {
 
                         // flip start of other
-                        other.FlipPoints();
+                        other.FlippPoints();
                         return true;
                     }
                     else if (this.End.Col - 1 == other.End.Col && this.End.Row + 1 == other.End.Row)
                     {
                         // flip start of this
-                        this.FlipPoints();
+                        this.FlippPoints();
                         // flip start of other
-                        other.FlipPoints();
+                        other.FlippPoints();
                         return true;
                     }
                 }
@@ -261,7 +313,7 @@ namespace Day_22
         public Edge Clone()
         {
             // Create a new Edge object with the same properties
-            var clonedEdge = new Edge(this.StartFaceId, this.EdgeType, this.Start, this.End);
+            var clonedEdge = new Edge(this.FaceId, this.EdgeType, this.Start, this.End);
 
             // Copy the coordinates list (deep copy)
             foreach (var coordinate in this.Coordinates)
@@ -358,7 +410,7 @@ namespace Day_22
                 Console.WriteLine("OuterEdges:");
                 foreach (var edge in edges)
                 {
-                    Console.WriteLine($"{i} Edge of Face {edge.StartFaceId} ({edge.EdgeType}) starts at {edge.Start} and ends at {edge.End}");
+                    Console.WriteLine($"{i} Edge of Face {edge.FaceId} ({edge.EdgeType}) starts at {edge.Start} and ends at {edge.End}");
                     i++;
                 }
 
@@ -372,24 +424,34 @@ namespace Day_22
 
                 foreach (EdgePair pair in corners)
                 {
-                    Console.WriteLine($"V-corner between Face {pair.EdgeA.StartFaceId} {pair.EdgeA.EdgeType} and position {pair.EdgeB.StartFaceId} {pair.EdgeB.EdgeType}");
+                    Console.WriteLine($"Corner between Face {pair.EdgeA.FaceId} {pair.EdgeA.EdgeType} and position {pair.EdgeB.FaceId} {pair.EdgeB.EdgeType}");
                 }
 
+                List<EdgePair> edgePairs = FindOtherPairs(corners, edges);
+                Console.WriteLine("");
                 // Output corners
-/*
-                foreach (var corner in corners)
-                {
-                    Console.WriteLine($"Corner at ({corner.Key.Row}, {corner.Key.Col}) connects {corner.Value.Count} edges:");
-                    foreach (var edge in corner.Value)
-                    {
-                        Console.WriteLine($"  - Edge of Face {edge.StartFaceId} ({edge.EdgeType})");
-                    }
-                }*/
+                /*
+                                foreach (var corner in corners)
+                                {
+                                    Console.WriteLine($"Corner at ({corner.Key.Row}, {corner.Key.Col}) connects {corner.Value.Count} edges:");
+                                    foreach (var edge in corner.Value)
+                                    {
+                                        Console.WriteLine($"  - Edge of Face {edge.StartFaceId} ({edge.EdgeType})");
+                                    }
+                                }*/
 
                 // Identify V-shaped corner nodes (corners where three faces meet)
                 // var vCornerNodes = FindVCornerNodes(faces, edges, faceSize);
-               // List<EdgePair> cornerPairs = FindVCornerNodes(Faces, faceSize);
-              
+                // List<EdgePair> cornerPairs = FindVCornerNodes(Faces, faceSize);
+
+
+                /*
+                 * 
+                 * OK. Now I corrected function to find corners and now I know, that: 
+corner is between Face 2 bottom and position 3 right
+that means that bottom of face 2 folds hith right of face 3. How do I map:
+Should I use invalid field map and if i
+                */
 
             }
             catch (Exception e)
@@ -405,8 +467,103 @@ after all 3 V nodes/corners vere visited and searched, we found all edges that c
              * */
 
 
+            }
+
+        public static List<EdgePair> FindOtherPairs(List<EdgePair> pairs, List<Edge> edges)
+        {
+            // clone list of edges
+            List<Edge> edgeClones = new List<Edge>();
+            foreach (Edge edge in edges)
+            {
+                Edge clonedEdge = edge.Clone(); // Use the Clone method to create a deep copy
+                edgeClones.Add(clonedEdge);     // Add the cloned edge to the edgeClones list
+            }
+
+            // remove paired edges 
+            foreach (EdgePair pair in pairs) {
+
+                
+                for (int i = edgeClones.Count - 1; i >= 0; i--) { 
+                    if (pair.EdgeA.Equals(edgeClones [i]) || pair.EdgeB.Equals(edgeClones[i])) {
+
+                        // remove  (edges[i] from list
+                        edgeClones.RemoveAt(i);
+                    }
+                }
+            }
+
+
+            List<EdgePair> newPairs = new List<EdgePair>();
+            foreach (EdgePair pair in pairs)
+            {
+                newPairs = findNextPair(newPairs, pair, edgeClones);
+                newPairs.Add(pair);
+
+            }
+
+            // check if some edges are not paired
+            if (edgeClones.Count == 2)
+            {
+                
+                EdgePair newpair = new EdgePair(edgeClones[1], edgeClones[0]);
+                newPairs.Add(newpair);
+            }
+            else if (edgeClones.Count > 0) {
+                // TODO:
+                throw new Exception("Not implemented procedure in function FindOtherPairs");
+            }
+
+
+            return newPairs;
         }
 
+        public static List<EdgePair> findNextPair(List<EdgePair> newPairs , EdgePair pair, List<Edge> edges) {
+
+            Edge e1 = null;
+            int i1 = -1;
+            Edge e2 = null;
+            int i2 = -1;
+            /// find first edge
+            for (int i = edges.Count - 1; i >= 0; i--)
+            {
+                if (pair.EdgeA.IsConnectedTo(edges[i]))
+                {
+                    e1 = edges[i].Clone();
+                    i1 = i;
+                    edges.RemoveAt(i);
+                    break;
+                }
+            }
+
+            for (int i = edges.Count - 1; i >= 0; i--)
+            {
+                if (pair.EdgeB.IsConnectedTo(edges[i]))
+                {
+                    i2 = i;
+                    e2 = edges[i].Clone();
+                    edges.RemoveAt(i);
+                    break;
+                }
+            }
+
+            if (i1 >= 0 && i2 >= 0 && (pair.EdgeA.FaceId != e1.FaceId || pair.EdgeB.FaceId != e2.FaceId))
+            {
+                EdgePair newpair = new EdgePair(e1, e2);
+
+                newPairs.Add(newpair);
+
+                //if(edges.count)
+                newPairs = findNextPair(newPairs, newpair, edges);
+            }
+            else if (i1 >= 0 || i2 >= 0) {
+                // it was not valid add
+                if (i1 >= 0) edges.Add(e1);
+                if (i2 >= 0) edges.Add(e2);
+                return newPairs;
+            }
+
+            return newPairs;
+        }
 
         public static List<EdgePair> FindInnerCorners(List<Edge> edges) {
 
@@ -433,30 +590,8 @@ after all 3 V nodes/corners vere visited and searched, we found all edges that c
              return pairs;
         
         }
-        // Find corners where edges intersect
-        public static Dictionary<(int Row, int Col), List<Edge>> FindCorners(List<Edge> edges)
-        {
 
-            var cornerPoints = new Dictionary<(int Row, int Col), List<Edge>>();
-
-            // Track how many times each coordinate appears in edges
-            foreach (var edge in edges)
-            {
-                foreach (var coordinate in edge.Coordinates)
-                {
-                    if (!cornerPoints.ContainsKey(coordinate))
-                    {
-                        cornerPoints[coordinate] = new List<Edge>();
-                    }
-                    cornerPoints[coordinate].Add(edge);
-                }
-            }
-
-            // Filter only points that connect more than one edge
-            return cornerPoints.Where(c => c.Value.Count >= 2)
-                               .ToDictionary(c => c.Key, c => c.Value);
-        }
-
+   
         // Function to find the size of one cube face dynamically
 
         public static int FindFaceSize(char[,] map, int rows, int cols)
@@ -678,7 +813,7 @@ after all 3 V nodes/corners vere visited and searched, we found all edges that c
         }
 
 
-
+        /*
         public static List<Edge> GetAllOuterEdges_old(List<CubeFace> faces)
         {
             var edges = new List<Edge>();
@@ -740,7 +875,7 @@ after all 3 V nodes/corners vere visited and searched, we found all edges that c
 
             return edges;
         }
-
+        */
 
         // Find V-shaped corner nodes (where three edges meet and change direction)
         public static List<VCornerNode> FindVCornerNodes(List<CubeFace> faces, int faceSize)
