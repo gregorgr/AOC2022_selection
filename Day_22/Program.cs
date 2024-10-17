@@ -63,10 +63,10 @@ namespace Day_22
             Console.WriteLine($"\nPart one!\nResult: {rezult} (6032 for demo and 197160 for puzzle) in {elapsed.Seconds} sec");
             Console.WriteLine($"\nPart two!");
             Day22part2 d2 = new Day22part2(puzzleB);
-            rezult = d2.Result;
+            rezult = d2.FinalPassword;
             stopwatch.Stop();
             elapsed = stopwatch.Elapsed;
-            Console.WriteLine($"Result: {rezult} (6032 for demo and 197160 for puzzle) in {elapsed.Seconds} sec");
+            Console.WriteLine($"Result: {rezult} (145065) in {elapsed.Seconds} sec");
             stopwatch.Restart();
         }
 

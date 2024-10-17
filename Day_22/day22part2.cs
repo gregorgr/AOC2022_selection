@@ -26,49 +26,6 @@ namespace Day_22
         }
     }
 
-    // Class to represent an edge
-    /*
-    public class Edge
-    {
-        public (int Row, int Col) Start { get; set; }  // Start coordinate
-        public (int Row, int Col) End { get; set; }    // End coordinate
-        public List<(int Row, int Col)> Coordinates { get; set; }  // List of all coordinates on the edge
-        public int StartFaceId { get; set; }  // The face ID the edge belongs to
-        public string EdgeType { get; set; }  // "top", "bottom", "left", "right"
-
-        public Edge(int startFaceId, string edgeType, (int Row, int Col) start, (int Row, int Col) end)
-        {
-            StartFaceId = startFaceId;
-            EdgeType = edgeType;
-            Start = start;
-            End = end;
-            Coordinates = new List<(int Row, int Col)>();  // Initialize coordinates list
-        }
-    }
-
-    */
-    /*
-    public class PointPair
-       {
-        public (int Row, int Col) PointA { get; set; }
-        public (int Row, int Col) PointB { get; set; }
-        public int PointAFace { get; set; }
-        public int PointBFace { get; set; }
-
-        public PointPair((int Row, int Col) pontA, (int Row, int Col) pontB)
-        {
-            PointA = pontA;
-            PointB = pontB;
-        }
-
-        public PointPair((int Row, int Col) pontA, int pointAFace,(int Row, int Col) pontB,  int pointBFace) {
-            PointA = pontA;
-            PointB = pontB;
-            PointAFace = pointAFace;
-            PointBFace = pointBFace;
-        }
-    }*/
-
     public class EdgePair {
 
         public Edge EdgeA { get; set; }
@@ -79,10 +36,17 @@ namespace Day_22
             EdgeB = eBd;
         }
     }
+    public enum Direction
+    {
+        Right = 0,
+        Down = 1,
+        Left = 2,
+        Up = 3
+    }
 
     public class Edge
     {
-        public (int Row, int Col) Start { get; set; }
+        public (int Row, int Col) Start { get; set; } // direction of connection
         public (int Row, int Col) End { get; set; }
         public List<(int Row, int Col)> Coordinates { get; set; }
         public int FaceId { get; set; }
@@ -325,23 +289,12 @@ namespace Day_22
         }
     }
 
-    // Class representing a V-shaped Corner node (corner between two faces)
-    public class VCornerNode
-    {
-        public (int Row, int Col) Position { get; set; }
-        public int[] FaceIds { get; set; }  // Three face IDs that meet at this node
-        public (int X, int Y) Direction { get; set; }  // Vector showing direction change
-
-        public VCornerNode(int[] faceIds, (int Row, int Col) position, (int X, int Y) direction)
-        {
-            FaceIds = faceIds;
-            Position = position;
-            Direction = direction;
-        }
-    }
 
     public class Day22part2
     {
+        /*
+         * 
+        // we would use similar code if we would store mapping in to cubeTransitions
         static Dictionary<(int, int), (int, int)> cubeTransitions = new Dictionary<(int, int), (int, int)>()
         {
             // Assuming a cube with 6 faces, indexed 1-6, with transitions between faces
@@ -360,12 +313,28 @@ namespace Day_22
 
             // Define similar transitions for faces 3, 4, 5, 6
         };
+        */
+        // Dictionary to store cube transitions (current position and direction -> new position and direction)
+        // public Dictionary<(int Row, int Col, string Direction), (int newRow, int newCol, string newDirection)> cubeTransitions;
+        // Dictionary to store cube transitions (current last position -> new position and direction)
+        public Dictionary<(int Row, int Col), (int newRow, int newCol, Direction newDir)> cubeTransitions;
 
-        public int Result { get; set; }
+
+        public int FinalPassword { get; set; }
 
         private string[] mapLines;
 
         private List<CubeFace> Faces;
+
+        // Directions as vectors for movement
+        private (int Row, int Col)[] DirectionVectors = new (int Row, int Col)[]
+        {
+            (0, 1),   // Right
+            (1, 0),   // Down
+            (0, -1),  // Left
+            (-1, 0)   // Up
+        };
+
         public Day22part2(string puzzleFile) {
 
 
@@ -426,32 +395,32 @@ namespace Day_22
                 {
                     Console.WriteLine($"Corner between Face {pair.EdgeA.FaceId} {pair.EdgeA.EdgeType} and position {pair.EdgeB.FaceId} {pair.EdgeB.EdgeType}");
                 }
+                Console.WriteLine("");
 
                 List<EdgePair> edgePairs = FindOtherPairs(corners, edges);
+                foreach (EdgePair pair in edgePairs)
+                {
+                    Console.WriteLine($" {pair.EdgeA.EdgeType}  edge of face {pair.EdgeA.FaceId} connects to {pair.EdgeB.EdgeType} of face {pair.EdgeB.FaceId} ");
+                }
                 Console.WriteLine("");
-                // Output corners
-                /*
-                                foreach (var corner in corners)
-                                {
-                                    Console.WriteLine($"Corner at ({corner.Key.Row}, {corner.Key.Col}) connects {corner.Value.Count} edges:");
-                                    foreach (var edge in corner.Value)
-                                    {
-                                        Console.WriteLine($"  - Edge of Face {edge.StartFaceId} ({edge.EdgeType})");
-                                    }
-                                }*/
 
-                // Identify V-shaped corner nodes (corners where three faces meet)
-                // var vCornerNodes = FindVCornerNodes(faces, edges, faceSize);
-                // List<EdgePair> cornerPairs = FindVCornerNodes(Faces, faceSize);
+                // create a cube transitions map
+                // cubeTransitions = new Dictionary<(int Row, int Col, Direction Dir), (int newRow, int newCol, Direction newDir)>();
+                cubeTransitions = new Dictionary<(int Row, int Col), (int newRow, int newCol, Direction newDir)>();
 
+                //var solver =   
+                GenerateCubeTransitions(edgePairs);
+                // Output the transitions
+                foreach (var transition in cubeTransitions)
+                {
+                    Console.WriteLine($"({transition.Key.Row}, {transition.Key.Col}) -> " +
+                                      $"({transition.Value.newRow}, {transition.Value.newCol}, {transition.Value.newDir})");
+                }
+                Console.WriteLine("");
 
-                /*
-                 * 
-                 * OK. Now I corrected function to find corners and now I know, that: 
-corner is between Face 2 bottom and position 3 right
-that means that bottom of face 2 folds hith right of face 3. How do I map:
-Should I use invalid field map and if i
-                */
+                // Now execute the path instructions:
+                ExecutePathInstructions(pathInstructions);
+  
 
             }
             catch (Exception e)
@@ -459,15 +428,165 @@ Should I use invalid field map and if i
 
                 Console.WriteLine(e.Message.ToString());
             }
-            /*
-             * - go to first V corner/node and do:
-move on both edges in the direction from V node to next corner (for example one vector goes up and second vector goes left) Those 2 vectors indicate edges that connect each if faces. if edge was not jet connected, it is valid edge (like 3 and 4), but if face 6 connects to face 1 and then we again move on face 6 and 1 it is not valid move.
-- when we find not valid move, we have to go to next V corner (node) and repeat process
-after all 3 V nodes/corners vere visited and searched, we found all edges that connect faces and new dirrections of moving.
-             * */
+
 
 
             }
+
+        private void ExecutePathInstructions(string pathInstructions)
+        {
+            // Start position and direction
+            int row = 0;
+            int col = Array.IndexOf(mapLines[0].ToCharArray(), '.'); // Starting at the leftmost open tile
+            Direction currentDirection = Direction.Right;
+
+            // Process the path instructions
+            for (int i = 0; i < pathInstructions.Length;)
+            {
+                if (char.IsDigit(pathInstructions[i]))
+                {
+                    // Parse the number of steps
+                    int steps = 0;
+                    while (i < pathInstructions.Length && char.IsDigit(pathInstructions[i]))
+                    {
+                        steps = steps * 10 + (pathInstructions[i] - '0');
+                        i++;
+                    }
+
+                    // Move forward by the parsed number of steps
+                    MoveForward(ref row, ref col, ref currentDirection, steps);
+                }
+                else if (pathInstructions[i] == 'R' || pathInstructions[i] == 'L')
+                {
+                    // Rotate direction
+                    currentDirection = Turn(currentDirection, pathInstructions[i]);
+                    i++; // Move past the 'R' or 'L'
+                }
+            }
+
+            // Output the final result
+            Console.WriteLine($"Final position: ({row + 1}, {col + 1}), Facing: {currentDirection}");
+            FinalPassword = (1000 * (row + 1)) + (4 * (col + 1)) + (int)currentDirection;
+           // Console.WriteLine($"Final password: {finalPassword}");
+        }
+
+
+        private void MoveForward(ref int row, ref int col, ref Direction direction, int steps)
+        {
+            for (int step = 0; step < steps; step++)
+            {
+                // Calculate the next row and column based on current direction
+                int nextRow = row + DirectionVectors[(int)direction].Row;
+                int nextCol = col + DirectionVectors[(int)direction].Col;
+
+                // Check if the next position is outside the current face
+                if (!IsInsideMap(nextRow, nextCol) || mapLines[nextRow][nextCol] == ' ')
+                {
+                    // Use the cube transition map to move to the next face
+                    (nextRow, nextCol, direction) = cubeTransitions[(row, col)];
+                }
+
+                // If the new position is a wall, stop moving
+                if (mapLines[nextRow][nextCol] == '#') break;
+
+                // Update the current position
+                row = nextRow;
+                col = nextCol;
+            }
+
+
+        }
+
+
+        private Direction Turn(Direction currentDirection, char turn)
+        {
+            // Rotate 90 degrees: 'R' = clockwise, 'L' = counterclockwise
+            if (turn == 'R')
+                return (Direction)(((int)currentDirection + 1) % 4);
+            else
+                return (Direction)(((int)currentDirection + 3) % 4); // Equivalent to turning left
+        }
+
+        private bool IsInsideMap(int row, int col)
+        {
+            return row >= 0 && row < mapLines.Length && col >= 0 && col < mapLines[row].Length;
+        }
+
+
+        // Method to generate transitions from edge pairs
+        public void GenerateCubeTransitions(List<EdgePair> edgePairs)
+        {
+            foreach (var pair in edgePairs)
+            {
+                Edge edgeA = pair.EdgeA;
+                Edge edgeB = pair.EdgeB;
+
+                // Both edges should have the same number of coordinates
+                int edgeLength = edgeA.Coordinates.Count;
+
+                for (int i = 0; i < edgeLength; i++)
+                {
+                    // Map from edge A to edge B
+                    var coordA = edgeA.Coordinates[i];
+                    var coordB = edgeB.Coordinates[edgeLength - 1 - i];  // Opposite direction
+
+                    Direction directionB = GetDirectionFromEdgeType(edgeB);
+
+                    // Add transition from edge A to edge B
+                    cubeTransitions[(coordA.Row, coordA.Col)] = (coordB.Row, coordB.Col, directionB);
+
+                    // Optionally, add the reverse transition from edge B to edge A
+                    Direction directionA = GetDirectionFromEdgeType(edgeA);
+                    cubeTransitions[(coordB.Row, coordB.Col)] = (coordA.Row, coordA.Col, directionA);
+                }
+            }
+        }
+
+        // Method to generate transitions from edge pairs
+        /*
+        public void GenerateCubeTransitions(List<EdgePair> edgePairs)
+        {
+            foreach (var pair in edgePairs)
+            {
+                Edge edgeA = pair.EdgeA;
+                Edge edgeB = pair.EdgeB;
+
+                // Both edges should have the same number of coordinates
+                int edgeLength = edgeA.Coordinates.Count;
+
+                for (int i = 0; i < edgeLength; i++)
+                {
+                    // Map from edge A to edge B
+                    var coordA = edgeA.Coordinates[i];
+                    var coordB = edgeB.Coordinates[edgeLength - 1 - i];  // Opposite direction
+
+                    Direction directionA = GetDirectionFromEdgeType(edgeA);
+                    Direction directionB = GetDirectionFromEdgeType(edgeB);
+
+                    // Add transition from edge A to edge B
+                    cubeTransitions[(coordA.Row, coordA.Col, directionA)] = (coordB.Row, coordB.Col, directionB);
+
+                    // Optionally, add the reverse transition from edge B to edge A
+                    cubeTransitions[(coordB.Row, coordB.Col, directionB)] = (coordA.Row, coordA.Col, directionA);
+                }
+            }
+        }
+        */
+        // Helper method to get the direction based on the edge type
+        private Direction GetDirectionFromEdgeType(Edge edge)
+        {
+            if (edge.Start.Row == edge.End.Row)
+            {
+                if (edge.Start.Col < edge.End.Col) return Direction.Right;  // Horizontal, increasing cols
+                else return Direction.Left;  // Horizontal, decreasing cols
+            }
+            else
+            {
+                if (edge.Start.Row < edge.End.Row) return Direction.Down;  // Vertical, increasing rows
+                else return Direction.Up;  // Vertical, decreasing rows
+            }
+        }
+
 
         public static List<EdgePair> FindOtherPairs(List<EdgePair> pairs, List<Edge> edges)
         {
@@ -878,6 +997,7 @@ after all 3 V nodes/corners vere visited and searched, we found all edges that c
         */
 
         // Find V-shaped corner nodes (where three edges meet and change direction)
+        /*
         public static List<VCornerNode> FindVCornerNodes(List<CubeFace> faces, int faceSize)
         {
             var vCornerNodes = new List<VCornerNode>();
@@ -909,6 +1029,7 @@ after all 3 V nodes/corners vere visited and searched, we found all edges that c
 
             return vCornerNodes;
         }
+        */
 
         // Helper function to find adjacent faces that share a corner with the current face
         public static List<CubeFace> FindAdjacentFaces((int Row, int Col) corner, CubeFace face, List<CubeFace> faces)
