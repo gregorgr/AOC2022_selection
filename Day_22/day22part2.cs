@@ -400,7 +400,8 @@ namespace Day_22
                 List<EdgePair> edgePairs = FindOtherPairs(corners, edges);
                 foreach (EdgePair pair in edgePairs)
                 {
-                    Console.WriteLine($" {pair.EdgeA.EdgeType}  edge of face {pair.EdgeA.FaceId} connects to {pair.EdgeB.EdgeType} of face {pair.EdgeB.FaceId} ");
+                    Console.WriteLine($"face {pair.EdgeA.FaceId}  {pair.EdgeA.EdgeType} --> {pair.EdgeB.FaceId} {pair.EdgeB.EdgeType} ");
+                    Console.WriteLine($"{pair.EdgeA.FaceId}={pair.EdgeA.Start}:{pair.EdgeA.End} --> {pair.EdgeB.FaceId}={pair.EdgeB.Start}:{pair.EdgeB.End}\n");
                 }
                 Console.WriteLine("");
 
@@ -413,8 +414,8 @@ namespace Day_22
                 // Output the transitions
                 foreach (var transition in cubeTransitions)
                 {
-                    Console.WriteLine($"({transition.Key.Row}, {transition.Key.Col}) -> " +
-                                      $"({transition.Value.newRow}, {transition.Value.newCol}, {transition.Value.newDir})");
+                 //   Console.WriteLine($"({transition.Key.Row}, {transition.Key.Col}) -> " +
+                 //                     $"({transition.Value.newRow}, {transition.Value.newCol}, {transition.Value.newDir})");
                 }
                 Console.WriteLine("");
 
@@ -473,6 +474,8 @@ namespace Day_22
 
         private void MoveForward(ref int row, ref int col, ref Direction direction, int steps)
         {
+            Direction newDirection = direction;
+
             for (int step = 0; step < steps; step++)
             {
                 // Calculate the next row and column based on current direction
@@ -483,11 +486,13 @@ namespace Day_22
                 if (!IsInsideMap(nextRow, nextCol) || mapLines[nextRow][nextCol] == ' ')
                 {
                     // Use the cube transition map to move to the next face
-                    (nextRow, nextCol, direction) = cubeTransitions[(row, col)];
+                    (nextRow, nextCol, newDirection) = cubeTransitions[(row, col)];
                 }
 
                 // If the new position is a wall, stop moving
                 if (mapLines[nextRow][nextCol] == '#') break;
+
+                if (newDirection!=direction) { direction = newDirection; }
 
                 // Update the current position
                 row = nextRow;
@@ -524,69 +529,74 @@ namespace Day_22
                 // Both edges should have the same number of coordinates
                 int edgeLength = edgeA.Coordinates.Count;
 
-                for (int i = 0; i < edgeLength; i++)
-                {
-                    // Map from edge A to edge B
-                    var coordA = edgeA.Coordinates[i];
-                    var coordB = edgeB.Coordinates[edgeLength - 1 - i];  // Opposite direction
+                // Get new direction fron mode type for  edge B to edge A
+                Direction directionA = GetDirectionFromEdgeType(edgeA);
+                Direction directionB = GetDirectionFromEdgeType(edgeB);
 
-                    Direction directionB = GetDirectionFromEdgeType(edgeB);
+                // the edge of square face edge is a vector pointing in one direction 
+                // if start point of vector correspondes to edge coordinates  array edgeA.Coordinates[0]
+                //      then we start at index 0 and increase index ++
+                //      else we start at inde= edgeLength - 1 (49) and decreasse index --
+                int indexA = edgeA.Start == edgeA.Coordinates[0] ? 0 : edgeLength - 1;
+                int indexB = edgeB.Start == edgeB.Coordinates[0] ? 0:  edgeLength - 1;
+
+                bool isForwardArrayA = indexA == 0;
+                bool isForwardArrayB = indexB == 0;
+
+                // Loop until we've processed all elements in the arrays
+                int steps = 0; // Keep track of steps (to compare with edgeLength)
+                while (steps < edgeLength)
+                {
+                    var coordA = edgeA.Coordinates[indexA];
+                    var coordB = edgeB.Coordinates[indexB];  // vector direction 
+
 
                     // Add transition from edge A to edge B
                     cubeTransitions[(coordA.Row, coordA.Col)] = (coordB.Row, coordB.Col, directionB);
 
-                    // Optionally, add the reverse transition from edge B to edge A
-                    Direction directionA = GetDirectionFromEdgeType(edgeA);
                     cubeTransitions[(coordB.Row, coordB.Col)] = (coordA.Row, coordA.Col, directionA);
+
+                    // Move isForwardArrayA based on direction of an edge vector
+                    if (isForwardArrayA)
+                        indexA++;  // Move forward in edge A
+                    else
+                        indexA--;  // Move backward in edge A
+
+                    // Move isForwardArrayB based on direction of an edge vector
+                    if (isForwardArrayB)
+                        indexB++;  // Move backward
+                    else
+                        indexB--;  // Move forward
+
+                    // Increment the step counter
+                    steps++;
+
                 }
+     
             }
         }
 
-        // Method to generate transitions from edge pairs
-        /*
-        public void GenerateCubeTransitions(List<EdgePair> edgePairs)
-        {
-            foreach (var pair in edgePairs)
-            {
-                Edge edgeA = pair.EdgeA;
-                Edge edgeB = pair.EdgeB;
-
-                // Both edges should have the same number of coordinates
-                int edgeLength = edgeA.Coordinates.Count;
-
-                for (int i = 0; i < edgeLength; i++)
-                {
-                    // Map from edge A to edge B
-                    var coordA = edgeA.Coordinates[i];
-                    var coordB = edgeB.Coordinates[edgeLength - 1 - i];  // Opposite direction
-
-                    Direction directionA = GetDirectionFromEdgeType(edgeA);
-                    Direction directionB = GetDirectionFromEdgeType(edgeB);
-
-                    // Add transition from edge A to edge B
-                    cubeTransitions[(coordA.Row, coordA.Col, directionA)] = (coordB.Row, coordB.Col, directionB);
-
-                    // Optionally, add the reverse transition from edge B to edge A
-                    cubeTransitions[(coordB.Row, coordB.Col, directionB)] = (coordA.Row, coordA.Col, directionA);
-                }
-            }
-        }
-        */
+        
+       
         // Helper method to get the direction based on the edge type
         private Direction GetDirectionFromEdgeType(Edge edge)
         {
-            if (edge.Start.Row == edge.End.Row)
-            {
-                if (edge.Start.Col < edge.End.Col) return Direction.Right;  // Horizontal, increasing cols
-                else return Direction.Left;  // Horizontal, decreasing cols
-            }
-            else
-            {
-                if (edge.Start.Row < edge.End.Row) return Direction.Down;  // Vertical, increasing rows
-                else return Direction.Up;  // Vertical, decreasing rows
+
+            switch (edge.EdgeType) {
+
+                case "right":
+                    return Direction.Left;
+                case "left": 
+                    return Direction.Right;
+                case "top":
+                    return Direction.Down;
+                case "bottom":
+                    return Direction.Up;
+                default:
+                    throw new Exception($"Unknown direction type: {edge.EdgeType}");
+
             }
         }
-
 
         public static List<EdgePair> FindOtherPairs(List<EdgePair> pairs, List<Edge> edges)
         {

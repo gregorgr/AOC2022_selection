@@ -108,8 +108,8 @@ namespace Day_22
             // Movement directions: right, down, left, up
             // dr and dc are arrays that represent changes in row and column positions for each direction
             // 0 = right, 1 = down, 2 = left, 3 = up
-            int[] dr = { 0, 1, 0, -1 };  // Row deltas for the four directions
-            int[] dc = { 1, 0, -1, 0 };  // Column deltas for the four directions
+            int[] deltaRow = { 0, 1, 0, -1 };  // Row deltas for the four directions
+            int[] deltaCol = { 1, 0, -1, 0 };  // Column deltas for the four directions
 
 
             // Starting position: find the first open tile (.) in the first row
@@ -141,7 +141,7 @@ namespace Day_22
                 else
                 {
                     // Once we encounter a letter (L or R), move the required number of steps
-                    Move(ref row, ref col, direction, currentNum, dr, dc, map, rows, cols);
+                    Move(ref row, ref col, direction, currentNum, deltaRow, deltaCol, map, rows, cols);
                     currentNum = 0;  // Ponastavimo število premikov
 
                     // Update the direction based on the command (L = turn left, R = turn right)
@@ -159,7 +159,7 @@ namespace Day_22
             // Perform the last move if there's a remaining number after the loop
             if (currentNum > 0)
             {
-                Move(ref row, ref col, direction, currentNum, dr, dc, map, rows, cols);
+                Move(ref row, ref col, direction, currentNum, deltaRow, deltaCol, map, rows, cols);
             }
 
             // Compute the final password based on the final position and direction
@@ -174,13 +174,13 @@ namespace Day_22
 
 
         // Function to handle moving across the map with wrapping around edges
-        static void Move(ref int row, ref int col, int direction, int steps, int[] dr, int[] dc, char[,] map, int rows, int cols)
+        static void Move(ref int row, ref int col, int direction, int steps, int[] deltaRow, int[] deltaCol, char[,] map, int rows, int cols)
         {
             for (int i = 0; i < steps; i++)
             {
                 // Calculate the next row and column based on the direction
-                int newRow = row + dr[direction];
-                int newCol = col + dc[direction];
+                int newRow = row + deltaRow[direction];
+                int newCol = col + deltaCol[direction];
 
                 // If the move goes out of bounds or into an empty space, wrap around
                 if (newRow < 0 || newRow >= rows || newCol < 0 || newCol >= cols || map[newRow, newCol] == ' ')
