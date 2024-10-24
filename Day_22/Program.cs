@@ -21,23 +21,24 @@ namespace Day_22
          * 3. We must find edges all of the Faces (but exclude inner edges)
          * 4. Find  Edges, that connect in corners
          * 
-         * TODO:
-
-         * 
          * 5. now start search for neigbouring Faces how cube map folds
          * - from each inner corner (from 4.) move out of the corrner on and the other dirrection and identify faces 
          * - direction from moving from start to end is a direction of a vector (start-end) 90° to face 
          *   is a direction that moving cursor over new face changes
-         * - continue to next edge untill Face repeats (not valid edge)
+         * - continue to next edge until both Faces repeat (not valid move)
          * - at the end we'll have all connections of the faces and how moving of cursor changes direction
-         *-  go to next corner and repeat the proces
+         * -  go to next corner and repeat the proces
          * 
-         * Now we have a rule of the game and how cursor moves along Faces
+         *  Now we have a rule of the game and how cursor moves along Faces
+         *  
+         *  TODO:  If some of the edges were not included in edge pairs if there is only one pair, connect them.  
          * 
          * 6. we can implement changed algorithm from part one
          * 
          * 7. We imlement function of how cursor changes directions when moves from one face to another 
          * (new direction is stored in a map prom point 5)
+         * - if cursor moves to unvalid field (off grid or empty space) we find a map for previous field
+         * - if the move was valid, we store new direction of moving
          * 
          * 8. We read out new position and calculate result
          * */
